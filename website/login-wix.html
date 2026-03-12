@@ -361,7 +361,7 @@
           <div class="form-row">
             <div class="checkbox-wrap">
               <input type="checkbox" id="remember" name="remember" checked>
-              <label for="remember">Se souvenir de moi</label>
+              <label for="remember">Rester connecté (e-mail mémorisé pour ce navigateur)</label>
             </div>
             <a href="#" class="forgot" id="forgot-link">Mot de passe oublié ?</a>
           </div>
@@ -440,7 +440,7 @@
       }
       function showError(msg) { if (authError) { authError.textContent = msg || ''; authError.classList.toggle('visible', !!msg); authError.classList.remove('success'); } }
       function setLoading(loading) { if (loginForm) loginForm.classList.toggle('auth-loading', loading); if (btnSubmit) btnSubmit.disabled = loading; }
-      var OFFIBOX_WEB_APP_URL = 'https://alexandreperrault.github.io/offibox/';
+      var OFFIBOX_WEB_APP_URL = 'https://www.offibox.fr/connected';
       function showLoginSuccessPanel() {
         var p = document.getElementById('login-success-panel');
         var b = document.body;
@@ -458,6 +458,13 @@
           }
         });
       }
+      (function restoreSavedEmail() {
+        try {
+          var saved = localStorage.getItem('offibox_login_email');
+          var emailEl = document.getElementById('email');
+          if (saved && emailEl) emailEl.value = saved;
+        } catch (e) {}
+      })();
       if (loginForm) loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
         if (!window.OffiboxAuth) { goToConnected(); return; }
@@ -465,7 +472,12 @@
         var password = document.getElementById('password').value;
         if (!email || !password) { showError('Veuillez remplir l\'email et le mot de passe.'); return; }
         showError(''); setLoading(true);
-        OffiboxAuth.signInWithEmailPassword(email, password).then(function() {
+        var stayLoggedIn = document.getElementById('remember') ? document.getElementById('remember').checked : true;
+        var setPersistence = OffiboxAuth.setPersistenceStayLoggedIn ? OffiboxAuth.setPersistenceStayLoggedIn(stayLoggedIn) : Promise.resolve();
+        setPersistence.then(function() {
+          return OffiboxAuth.signInWithEmailPassword(email, password);
+        }).then(function() {
+          try { localStorage.setItem('offibox_login_email', email); } catch (e) {}
           window.location.href = OFFIBOX_WEB_APP_URL;
         }).catch(function(err) {
           setLoading(false);

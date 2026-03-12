@@ -361,7 +361,7 @@
           <div class="form-row">
             <div class="checkbox-wrap">
               <input type="checkbox" id="remember" name="remember" checked>
-              <label for="remember">Rester connecté</label>
+              <label for="remember">Rester connecté (e-mail mémorisé pour ce navigateur)</label>
             </div>
             <a href="#" class="forgot" id="forgot-link">Mot de passe oublié ?</a>
           </div>
@@ -458,6 +458,13 @@
           }
         });
       }
+      (function restoreSavedEmail() {
+        try {
+          var saved = localStorage.getItem('offibox_login_email');
+          var emailEl = document.getElementById('email');
+          if (saved && emailEl) emailEl.value = saved;
+        } catch (e) {}
+      })();
       if (loginForm) loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
         if (!window.OffiboxAuth) { goToConnected(); return; }
@@ -470,6 +477,7 @@
         setPersistence.then(function() {
           return OffiboxAuth.signInWithEmailPassword(email, password);
         }).then(function() {
+          try { localStorage.setItem('offibox_login_email', email); } catch (e) {}
           window.location.href = OFFIBOX_WEB_APP_URL;
         }).catch(function(err) {
           setLoading(false);
